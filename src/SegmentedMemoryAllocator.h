@@ -31,7 +31,7 @@ public:
     void* allocFirstFit(size_t size);
     void* allocBestFit(size_t size);
     void* allocWorstFit(size_t size);
-    void dealloc(size_t size);
+    void dealloc(void* memoryAddress);
     
     void printAllocatedList();
     void printDeallocatedList();
