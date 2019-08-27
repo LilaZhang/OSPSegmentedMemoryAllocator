@@ -36,9 +36,13 @@ public:
     void printAllocatedList();
     void printDeallocatedList();
 
+    // dummy test function, remove later
+    void requestFreeBlock(size_t size);
+
 private:
 
     block* createBlock(size_t size);
+    block* newAlloc(size_t size, bool spaceFound);
 
     list<block*>* allocatedMemory;
     list<block*>* deallocatedMemory;
