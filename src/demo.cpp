@@ -8,23 +8,30 @@ using std::endl;
 
 int main() {
 
-    SegmentedMemoryAllocator* sma = new SegmentedMemoryAllocator();
+    // First fit tests
+    // int* i = (int*)SegmentedMemoryAllocator::alloc(10, 1);
+    // int* j = (int*)SegmentedMemoryAllocator::alloc(20, 1);
+    // int* k = (int*)SegmentedMemoryAllocator::alloc(13, 1);
+    // cout << "int i mem addr=" << i << endl;
+    // cout << "int j mem addr=" << j << endl;
+    // cout << "int k mem addr=" << k << endl;
 
-    int* i = (int*)sma->allocFirstFit(10);
-    int* j = (int*)sma->allocFirstFit(20);
-    int* k = (int*)sma->allocFirstFit(13);
-    cout << "int i mem addr=" << i << endl;
-    cout << "int j mem addr=" << j << endl;
-    cout << "int k mem addr=" << k << endl;
+    // SegmentedMemoryAllocator::dealloc(k);
 
-    sma->dealloc(k);
+    // SegmentedMemoryAllocator::requestFreeBlock(80);
+    // int* m = (int*)SegmentedMemoryAllocator::alloc(50, 1);
+    // cout << "int m mem addr=" << m << endl;
 
-    sma->requestFreeBlock(80);
-    int* m = (int*)sma->allocFirstFit(50);
-    cout << "int m mem addr=" << m << endl;
+    // Best fit tests
+    SegmentedMemoryAllocator::requestFreeBlock(30);
+    SegmentedMemoryAllocator::requestFreeBlock(15);
+    SegmentedMemoryAllocator::requestFreeBlock(45);
+
+    int* l = (int*)SegmentedMemoryAllocator::alloc(14, 3);
+    cout << "int l mem addr=" << l << endl;
 
     cout << "\nALLOCATED LIST:" << endl;
-    sma->printAllocatedList();
+    SegmentedMemoryAllocator::printAllocatedList();
     cout << "\n\nFREE LIST:" << endl;
-    sma->printDeallocatedList();
+    SegmentedMemoryAllocator::printDeallocatedList();
 }

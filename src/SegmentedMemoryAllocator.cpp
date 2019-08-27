@@ -7,10 +7,10 @@ using std::endl;
 
 #define EMPTY 0
 
-SegmentedMemoryAllocator::SegmentedMemoryAllocator() :
-    allocatedMemory(new list<block*>()),
-    deallocatedMemory(new list<block*>())
-{
+list<block*>* allocatedMemory = new list<block*>();
+list<block*>* deallocatedMemory = new list<block*>();
+
+SegmentedMemoryAllocator::SegmentedMemoryAllocator() {
     cout << "BLOCK SIZE=" << BLOCK_SIZE << " bytes" << endl;
 }
 
@@ -81,6 +81,7 @@ block* SegmentedMemoryAllocator::newAlloc(size_t size, bool spaceFound) {
 // Returns a null pointer if there's no space left in the heap
 //    for the requested size.
 void* SegmentedMemoryAllocator::allocFirstFit(size_t size) {
+        
     block* newBlock = nullptr;
     void* returnAddress = nullptr;
 
@@ -123,7 +124,7 @@ void* SegmentedMemoryAllocator::allocFirstFit(size_t size) {
             }
         }
     }
-    newBlock = this->newAlloc(size, spaceFound);
+    newBlock = newAlloc(size, spaceFound);
     if(newBlock != nullptr) {
         returnAddress = newBlock->memoryAddress;
     }
@@ -131,59 +132,67 @@ void* SegmentedMemoryAllocator::allocFirstFit(size_t size) {
     return returnAddress;
 }
 
-// Best fit: iterate through ALL block nodes and determine the node 
-//      with the closest size value to the size being inserted.
-//      Out of all the blocks which are able to satisfy the size
-//      required, pick the smallest one.
+// Return a memory address corresponding to the smallest
+// block capable of holding the requested size
 void* SegmentedMemoryAllocator::allocBestFit(size_t size) {
     block* newBlock = nullptr;
     void* returnAddress = nullptr;
 
     bool spaceFound = false;
-    // Traverse all blocks in free list until the first 
-    // suitable free space is found
     if(deallocatedMemory->size() > EMPTY) {
         // Find the smallest suitable block for requested size,
         // starting at the head of free list
-        size_t smallestFit = deallocatedMemory->front()->size;
-
+        block* smallestBlockFit = deallocatedMemory->front();
         for (list<block*>::iterator it = deallocatedMemory->begin(); 
-            it != deallocatedMemory->end() && !spaceFound; ++it) 
+            it != deallocatedMemory->end(); ++it) 
         {
             cout << "(current size=" << (*it)->size << " bytes, isFree=" 
                 << (*it)->isFree << ")" << endl;
-            
             // If a space large enough was found
             if((*it)->size >= size && ((*it)->isFree)) {
                 cout << "found a space in free list!" << endl;
-                spaceFound = true;
-                
-                // Split existing free block if its available size 
-                // is greater than the required size
-                if((*it)->size > size) {
-                    cout << "creating a split block.." << endl;
-                    size_t remainder = ((*it)->size) - size;
-                    // Create remainder block and add to end of allocated list
-                    newBlock = createBlock(remainder);
-                    // If a remainder block was constructed, 
-                    // add to back of free list
-                    if(newBlock != nullptr) {
-                        cout << "created remainder block of size=" << remainder << endl;
-                        newBlock->size = remainder;
-                        newBlock->isFree = true;
-                        deallocatedMemory->push_back(newBlock);
-                        cout << "free block split." << endl;
-                    }
+
+                if((*it)->size <= smallestBlockFit->size && ((*it)->isFree)) {
+                    smallestBlockFit = (*it);
                 }
-                (*it)->size = size;
-                (*it)->isFree = false;
-                // Transfer the now allocated block 
-                // from free list to allocated list
-                allocatedMemory->splice(allocatedMemory->end(), *deallocatedMemory, it);
+            }  
+        }
+        cout << "smallest fit block has size=" << smallestBlockFit->size << " bytes." << endl;
+        if(smallestBlockFit->size >= size) {
+            // Split existing free block if its available size 
+            // is greater than the required size
+            if(smallestBlockFit->size > size) {
+                cout << "creating a split block.." << endl;
+                size_t remainder = (smallestBlockFit->size) - size;
+                // Create remainder block and add to end of allocated list
+                newBlock = createBlock(remainder);
+                // If a remainder block was constructed, 
+                // add to back of free list
+                if(newBlock != nullptr) {
+                    cout << "created remainder block of size=" << remainder << endl;
+                    newBlock->size = remainder;
+                    newBlock->isFree = true;
+                    deallocatedMemory->push_back(newBlock);
+                    cout << "block split successful." << endl;
+                }
+            }
+            list<block*>::iterator it;
+            // Find position of smallest suitable block in free list
+            for(it = deallocatedMemory->begin(); 
+                it != deallocatedMemory->end() && !spaceFound; ++it)
+            {
+                if((*it)->memoryAddress == smallestBlockFit->memoryAddress) {
+                    spaceFound = true;
+                    (*it)->size = size;
+                    (*it)->isFree = false;
+                    // Transfer the now allocated block 
+                    // from free list to allocated list
+                    allocatedMemory->splice(allocatedMemory->end(), *deallocatedMemory, it);
+                }
             }
         }
     }
-    newBlock = this->newAlloc(size, spaceFound);
+    newBlock = newAlloc(size, spaceFound);
     if(newBlock != nullptr) {
         returnAddress = newBlock->memoryAddress;
     }
@@ -191,14 +200,93 @@ void* SegmentedMemoryAllocator::allocBestFit(size_t size) {
     return returnAddress;
 }
 
-// // Worst fit: iterate through ALL block nodes and determine the node 
-// //      with the largest size value, split, then create a rem block 
-// //      and push back to deallocated list.
-// //      Out of all the blocks which are able to satisfy the size
-// //      required, pick the largest one.
-// void* SegmentedMemoryAllocator::allocWorstFit(size_t size) {
+// Return a memory address corresponding to the largest
+// block capable of holding the requested size
+void* SegmentedMemoryAllocator::allocWorstFit(size_t size) {
+    block* newBlock = nullptr;
+    void* returnAddress = nullptr;
 
-// }
+    bool spaceFound = false;
+    if(deallocatedMemory->size() > EMPTY) {
+        // Find the smallest suitable block for requested size,
+        // starting at the head of free list
+        block* largestBlockFit = deallocatedMemory->front();
+        for (list<block*>::iterator it = deallocatedMemory->begin(); 
+            it != deallocatedMemory->end(); ++it) 
+        {
+            cout << "(current size=" << (*it)->size << " bytes, isFree=" 
+                << (*it)->isFree << ")" << endl;
+            // If a space large enough was found
+            if((*it)->size > size && ((*it)->isFree)) {
+                cout << "found a space in free list!" << endl;
+
+                if((*it)->size >= largestBlockFit->size && ((*it)->isFree)) {
+                    largestBlockFit = (*it);
+                }
+            }  
+        }
+        cout << "largest fit block has size=" << largestBlockFit->size << " bytes." << endl;
+        if(largestBlockFit->size >= size) {
+            // Split existing free block if its available size 
+            // is greater than the required size
+            if(largestBlockFit->size > size) {
+                cout << "creating a split block.." << endl;
+                size_t remainder = (largestBlockFit->size) - size;
+                // Create remainder block and add to end of allocated list
+                newBlock = createBlock(remainder);
+                // If a remainder block was constructed, 
+                // add to back of free list
+                if(newBlock != nullptr) {
+                    cout << "created remainder block of size=" << remainder << endl;
+                    newBlock->size = remainder;
+                    newBlock->isFree = true;
+                    deallocatedMemory->push_back(newBlock);
+                    cout << "block split successful." << endl;
+                }
+            }
+            list<block*>::iterator it;
+            // Find position of smallest suitable block in free list
+            for(it = deallocatedMemory->begin(); 
+                it != deallocatedMemory->end() && !spaceFound; ++it)
+            {
+                if((*it)->memoryAddress == largestBlockFit->memoryAddress) {
+                    spaceFound = true;
+                    (*it)->size = size;
+                    (*it)->isFree = false;
+                    // Transfer the now allocated block 
+                    // from free list to allocated list
+                    allocatedMemory->splice(allocatedMemory->end(), *deallocatedMemory, it);
+                }
+            }
+        }
+    }
+    newBlock = newAlloc(size, spaceFound);
+    if(newBlock != nullptr) {
+        returnAddress = newBlock->memoryAddress;
+    }
+    cout << "size of allocated list is now " << allocatedMemory->size() << endl;
+    return returnAddress;
+}
+
+// Primary alloc function called from main with a specified
+// strategy for block allocation.
+// First Fit Strategy 0
+// Best Fit Strategy 1
+// Worst Fit Strategy 2
+void* SegmentedMemoryAllocator::alloc(size_t size, int strategy) {
+    void* memoryAddress = nullptr;
+
+    if(strategy == FIRST_FIT) {
+        memoryAddress = allocFirstFit(size);
+    }
+    else if(strategy == BEST_FIT) {
+        memoryAddress = allocBestFit(size);
+    }
+    else if(strategy == WORST_FIT) {
+        memoryAddress = allocWorstFit(size);
+    }
+    return memoryAddress;
+}
 
 void SegmentedMemoryAllocator::dealloc(void* memoryAddress) {
     cout << "mem addr to search=" << memoryAddress << endl;
