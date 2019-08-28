@@ -288,6 +288,8 @@ void* SegmentedMemoryAllocator::alloc(size_t size, int strategy) {
     return memoryAddress;
 }
 
+// Primary dealloc function called from main to free a
+// block in the allocated list
 void SegmentedMemoryAllocator::dealloc(void* memoryAddress) {
     cout << "mem addr to search=" << memoryAddress << endl;
     bool blockFound = false;
@@ -305,9 +307,17 @@ void SegmentedMemoryAllocator::dealloc(void* memoryAddress) {
             deallocatedMemory->splice(deallocatedMemory->end(), *allocatedMemory, it);
         }
     }
-    cout << "dealloc successful.\nsize of free list is now " 
+    if(blockFound) {
+        cout << "dealloc successful.\nsize of free list is now " 
         << deallocatedMemory->size() << "\nsize of allocated list is now " 
         << allocatedMemory->size() << endl;
+    }
+    else {
+        cout << "could not find memory address " << memoryAddress << 
+            "\nTerminated program." << endl;
+        // Terminate program
+        exit(EXIT_FAILURE);
+    }
 }
 
 // Test function to construct 'free' blocks and add
