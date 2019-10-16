@@ -1,48 +1,155 @@
 #include <iostream>
+#include <string>
+#include <vector>
 #include "SegmentedMemoryAllocator.h"
 
 using std::cout;
 using std::cin;
 using std::endl;
+using std::string;
+using std::vector;
+
+#define ALLOC 'a'
+#define DEALLOC 'd'
+#define CHANGE 'c'
+#define PRINT_ALLOCATED 'p'
+#define PRINT_DEALLOCATED 'k'
+#define EXIT 'x'
+
+vector<int*> pointers;
+
+void displayTitle();
+void displayMenu();
+void printPointers();
+bool isANumber(string s);
 
 int main() {
+    
+    bool exit = false;
+    
+    displayTitle();
+    while(!exit) {
+        displayMenu();
+        cout << "-> ";
+        char command;
+        cin >> command;
 
-    cout << "Segmented Memory Allocator\n============================\n" << 
-    "Commands:\na     alloc(size_t size, int strategy)\n" << 
-    "d     dealloc(void* memoryAddress)" << endl;
+        if(command == ALLOC) {
+            size_t size = 0;
+            string s;
+            cout << "How many bytes to allocate? -> ";
+            cin >> s;
+            if(isANumber(s)) {
+                int i = stoi(s);
+                size = i;
+                int* ptr = (int*)alloc(size);
+                pointers.push_back(ptr);
+                cout << endl;
+                printPointers();
+            }
+            else {
+                cout << "Please provide a valid number." << endl;
+            }
+        }
+        else if(command == DEALLOC) {
+            string s;
+            unsigned int i = 0;
+            int* addr;
+            cout << "Index of memory address to deallocate -> ";
+            cin >> s;
+            if(isANumber(s)) {
+                i = stoi(s);
+                if(i < pointers.size() && i >= 0) {
+                    addr = pointers.at(i);
+                    dealloc(addr);
+                    printPointers();
+                }
+                else {
+                    cout << "Invalid index provided." << endl;
+                }
+            }
+            else {
+                cout << "Please provide a valid number." << endl;
+            }
+        }
+        else if(command == CHANGE) {
+            string s;
+            int j = 0;
+            cout << "Enter 1 for First, or 2 for Best, or 3 for Worst -> ";
+            cin >> s;
+            if(isANumber(s)) {
+                j = stoi(s);
+                if(j == 1 || j == 2 || j == 3) {
+                    strategy s;
+                    if(j == 1) {
+                        s = FIRSTFIT;
+                        cout << "Changed strategy to First-Fit." << endl;
+                    }
+                    else if(j == 2) {
+                        s = BESTFIT;
+                        cout << "Changed strategy to Best-Fit." << endl;
+                    }
+                    else if(j == 3) {
+                        s = WORSTFIT;
+                        cout << "Changed strategy to Worst-Fit." << endl;
+                    }
+                    setStrategy(s);
+                }
+                else {
+                    cout << "Not a valid strategy." << endl;
+                }
+            }
+            else {
+                cout << "Please provide a valid number." << endl;
+            }
+        }
+        else if(command == PRINT_ALLOCATED) {
+            cout << "ALLOCATED LIST" << endl;
+            printAllocatedList();
+            cout << endl;
+            printPointers();
+        }
+        else if(command == PRINT_DEALLOCATED) {
+            cout << "DEALLOCATED LIST" << endl;
+            printDeallocatedList();
+            cout << endl;
+            printPointers();
+        }
+        else if(command == EXIT) {
+            exit = true;
+            cout << "Goodbye." << endl;
+        }
+        else {
+            cout << "Not a valid command." << endl;
+        }
+    }
+}
 
-    int strategy = FIRST_FIT;
-    // First fit tests
-    // int* i = (int*)SegmentedMemoryAllocator::alloc(10, 1);
-    // int* j = (int*)SegmentedMemoryAllocator::alloc(20, 1);
-    // int* k = (int*)SegmentedMemoryAllocator::alloc(13, 1);
-    // cout << "int i mem addr=" << i << endl;
-    // cout << "int j mem addr=" << j << endl;
-    // cout << "int k mem addr=" << k << endl;
+void displayTitle() {
+    cout << "\nSEGMENTED MEMORY ALLOCATOR S3718057\n==========================\n" << 
+    "Note: Allocation strategy is by default set to First-fit.\nPointer type used in" << 
+    " this demo class is int* only." << endl;
+}
 
-    // SegmentedMemoryAllocator::dealloc(k);
+void displayMenu() {
+    cout << "\nCOMMANDS\na     alloc(size_t size)\n" << 
+    "d     dealloc(void* memoryAddress)\nc     Change Strategy (First=1, Best=2, Worst=3)" <<
+    "\np     printAllocatedList()\n" << "k     printDeallocatedList()\nx     exit" << endl;
+}
 
-    // SegmentedMemoryAllocator::requestFreeBlock(80);
-    // int* m = (int*)SegmentedMemoryAllocator::alloc(50, 1);
-    // cout << "int m mem addr=" << m << endl;
+void printPointers() {
+    cout << "POINTERS CREATED SO FAR" << endl;
+    for(unsigned int i = 0; i < pointers.size(); ++i) {
+        cout << "index " << i << ":   " << pointers.at(i) << endl;
+    }
+}
 
-    // cout << "Which allocator?\n1   First-fit\n2   Best-fit\n3   Worst fit" << endl;
-    // int choice = 0;
-    // cin >> choice;
-
-    // Best fit tests
-    SegmentedMemoryAllocator::requestFreeBlock(30);
-    SegmentedMemoryAllocator::requestFreeBlock(15);
-    SegmentedMemoryAllocator::requestFreeBlock(45);
-
-    int* l = (int*)SegmentedMemoryAllocator::alloc(sizeof(int), strategy);
-    cout << "int l mem addr=" << l << endl;
-
-    int* s = new int(5);
-    SegmentedMemoryAllocator::dealloc(s);
-
-    cout << "\nALLOCATED LIST:" << endl;
-    SegmentedMemoryAllocator::printAllocatedList();
-    cout << "\n\nFREE LIST:" << endl;
-    SegmentedMemoryAllocator::printDeallocatedList();
+bool isANumber(string s) {
+    bool isNumber = true;
+    for(unsigned int i = 0; i < s.size() && isNumber; ++i) {
+        if(!isdigit(s[i])) {
+            isNumber = false;
+        }
+    }
+    return isNumber;
 }

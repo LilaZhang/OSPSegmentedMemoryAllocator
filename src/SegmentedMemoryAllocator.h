@@ -1,7 +1,7 @@
 #ifndef SEGMENTED_MEMORY_ALLOCATOR_H
 #define SEGMENTED_MEMORY_ALLOCATOR_H
 
-#include<unistd.h>
+#include <unistd.h>
 #include <list>
 
 #define CURRENT 0
@@ -23,31 +23,33 @@ struct block {
     bool isFree;
 };
 
+enum strategy
+{
+    FIRSTFIT,
+    BESTFIT,
+    WORSTFIT
+};
+
+
 using std::list;
 
-class SegmentedMemoryAllocator {
-public:
-
-    SegmentedMemoryAllocator();
-    ~SegmentedMemoryAllocator();
-
-    static void* alloc(size_t size, int strategy);
-    static void dealloc(void* memoryAddress);
+void* alloc(size_t size);
+void dealloc(void* memoryAddress);
     
-    static void printAllocatedList();
-    static void printDeallocatedList();
+void printAllocatedList();
+void printDeallocatedList();
 
-    // dummy test function, remove later
-    static void requestFreeBlock(size_t size);
+// dummy test function, remove later
+void requestFreeBlock(size_t size);
 
-private:
+// Change the allocation strategy in use
+void setStrategy(strategy newStrategy);
 
-    static block* createBlock(size_t size);
-    static block* newAlloc(size_t size, bool spaceFound);
-    
-    static void* allocFirstFit(size_t size);
-    static void* allocBestFit(size_t size);
-    static void* allocWorstFit(size_t size);
-};
+block* createBlock(size_t size);
+block* newAlloc(size_t size, bool spaceFound);
+
+void* allocFirstFit(size_t size);
+void* allocBestFit(size_t size);
+void* allocWorstFit(size_t size);
 
 #endif // SEGMENTED_MEMORY_ALLOCATOR_H
